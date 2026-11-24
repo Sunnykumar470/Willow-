@@ -231,19 +231,29 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     const backupId = `bkp_${Date.now()}`;
     const backupPath = `users/${fbUser.uid}/backups/${backupId}`;
     try {
+      const safeUsername = user.username.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 30);
+      const safeDisplayName = (user.displayName || safeUsername || 'Willow User').trim().slice(0, 60);
+      const safeBio = (user.bio || '').slice(0, 200);
+      const safeLabel = `Snapshot (${new Date().toLocaleDateString()})`.slice(0, 80);
+      const safeConversationCount = Math.min(10000, Math.max(0, Math.floor(conversations.length)));
+      const safeMessageCount = Math.min(
+        1000000,
+        Math.max(0, Math.floor(conversations.reduce((acc, c) => acc + (c.lastMessage ? 1 : 0) + c.unreadCount, 0)))
+      );
+
       await setDoc(doc(db, profilePath), {
         uid: fbUser.uid,
-        username: user.username,
-        displayName: user.displayName,
-        bio: user.bio,
+        username: safeUsername,
+        displayName: safeDisplayName,
+        bio: safeBio,
         updatedAt: serverTimestamp(),
       });
       await setDoc(doc(db, backupPath), {
         ownerUid: fbUser.uid,
-        username: user.username,
-        backupLabel: `Snapshot (${new Date().toLocaleDateString()})`,
-        conversationCount: conversations.length,
-        messageCount: conversations.reduce((acc, c) => acc + (c.lastMessage ? 1 : 0) + c.unreadCount, 0),
+        username: safeUsername,
+        backupLabel: safeLabel,
+        conversationCount: safeConversationCount,
+        messageCount: safeMessageCount,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });

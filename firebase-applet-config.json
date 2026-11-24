@@ -3,6 +3,7 @@
   "appId": "1:381773265420:web:ba1c43ce53b244cebbcc29",
   "apiKey": "AIzaSyAwYo0vorIejtTD5SXQLsrosVgK16uLO6I",
   "authDomain": "poised-renderer-f01dl.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-userchat-09e5694a-224d-4e5f-96b7-946492ffcf6e",
   "storageBucket": "poised-renderer-f01dl.firebasestorage.app",
   "messagingSenderId": "381773265420",
   "measurementId": "",

@@ -1,0 +1,106 @@
+{
+  "entities": {
+    "CloudProfile": {
+      "title": "CloudProfile",
+      "description": "User-linked cloud profile snapshot stored in Firestore for cross-device backup.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the owner",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "username": {
+          "type": "string",
+          "description": "Unique Willow handle",
+          "minLength": 3,
+          "maxLength": 30,
+          "pattern": "^[a-z0-9_]{3,30}$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User display name",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "bio": {
+          "type": "string",
+          "description": "User bio/about text",
+          "maxLength": 200
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last cloud profile sync"
+        }
+      },
+      "required": ["uid", "username", "displayName", "bio", "updatedAt"]
+    },
+    "ChatBackup": {
+      "title": "ChatBackup",
+      "description": "Metadata summary of an encrypted/portable user chat backup stored in Firestore.",
+      "type": "object",
+      "properties": {
+        "ownerUid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the backup owner",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "username": {
+          "type": "string",
+          "description": "Willow username associated with this backup",
+          "minLength": 3,
+          "maxLength": 30,
+          "pattern": "^[a-z0-9_]{3,30}$"
+        },
+        "backupLabel": {
+          "type": "string",
+          "description": "Human-readable label for the backup",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "conversationCount": {
+          "type": "integer",
+          "description": "Number of conversations included"
+        },
+        "messageCount": {
+          "type": "integer",
+          "description": "Number of messages included"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when backup was created"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when backup was last updated"
+        }
+      },
+      "required": [
+        "ownerUid",
+        "username",
+        "backupLabel",
+        "conversationCount",
+        "messageCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/profile/{docId}": {
+      "schema": { "$ref": "#/entities/CloudProfile" },
+      "description": "Owner-isolated cloud profile metadata for Willow backup sync."
+    },
+    "/users/{userId}/backups/{backupId}": {
+      "schema": { "$ref": "#/entities/ChatBackup" },
+      "description": "Owner-isolated cloud backup summaries for user chat archives."
+    }
+  }
+}

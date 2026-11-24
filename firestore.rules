@@ -1,0 +1,76 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidCloudProfile(data, userId) {
+      return data.keys().hasAll(['uid', 'username', 'displayName', 'bio', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'username', 'displayName', 'bio', 'updatedAt'])
+        && data.uid is string && data.uid == userId && isValidId(data.uid)
+        && data.username is string && data.username.size() >= 3 && data.username.size() <= 30 && data.username.matches('^[a-z0-9_]{3,30}$')
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 60
+        && data.bio is string && data.bio.size() <= 200
+        && data.updatedAt is timestamp && data.updatedAt == request.time;
+    }
+
+    function isValidChatBackup(data, userId) {
+      return data.keys().hasAll(['ownerUid', 'username', 'backupLabel', 'conversationCount', 'messageCount', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['ownerUid', 'username', 'backupLabel', 'conversationCount', 'messageCount', 'createdAt', 'updatedAt'])
+        && data.ownerUid is string && data.ownerUid == userId && isValidId(data.ownerUid)
+        && data.username is string && data.username.size() >= 3 && data.username.size() <= 30 && data.username.matches('^[a-z0-9_]{3,30}$')
+        && data.backupLabel is string && data.backupLabel.size() >= 1 && data.backupLabel.size() <= 80
+        && data.conversationCount is int && data.conversationCount >= 0 && data.conversationCount <= 10000
+        && data.messageCount is int && data.messageCount >= 0 && data.messageCount <= 1000000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp && data.updatedAt == request.time;
+    }
+
+    match /users/{userId}/profile/{docId} {
+      allow get: if isValidId(userId) && isValidId(docId) && docId == 'main' && isOwner(userId);
+      allow list: if isSignedIn() && request.auth.uid == userId && resource.data.uid == request.auth.uid;
+      allow create: if isValidId(userId) && isValidId(docId) && docId == 'main' && isOwner(userId) && isValidCloudProfile(incoming(), userId);
+      allow update: if isValidId(userId) && isValidId(docId) && docId == 'main' && isOwner(userId)
+        && isValidCloudProfile(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().diff(existing()).affectedKeys().hasOnly(['username', 'displayName', 'bio', 'updatedAt']);
+      allow delete: if isValidId(userId) && isValidId(docId) && docId == 'main' && isOwner(userId);
+    }
+
+    match /users/{userId}/backups/{backupId} {
+      allow get: if isValidId(userId) && isValidId(backupId) && isOwner(userId);
+      allow list: if isSignedIn() && request.auth.uid == userId && resource.data.ownerUid == request.auth.uid;
+      allow create: if isValidId(userId) && isValidId(backupId) && isOwner(userId)
+        && isValidChatBackup(incoming(), userId)
+        && incoming().createdAt == request.time;
+      allow update: if isValidId(userId) && isValidId(backupId) && isOwner(userId)
+        && isValidChatBackup(incoming(), userId)
+        && incoming().ownerUid == existing().ownerUid
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['username', 'backupLabel', 'conversationCount', 'messageCount', 'updatedAt']);
+      allow delete: if isValidId(userId) && isValidId(backupId) && isOwner(userId);
+    }
+  }
+}

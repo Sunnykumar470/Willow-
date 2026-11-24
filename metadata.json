@@ -1,0 +1,6 @@
+{
+  "name": "Willow",
+  "description": "Real-time username-based messaging web app inspired by WhatsApp with private chats, groups, statuses, cloud backup, and Google Chat.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
